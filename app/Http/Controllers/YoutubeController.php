@@ -7,44 +7,35 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class YoutubeController extends Controller
-{   
+{
+    public function __construct(private YoutubeServices $youtubeService) {}
 
-    protected $youtubeService;
-
-    public function __construct(YoutubeServices $youtubeService)
+    public function index()
     {
-        $this->youtubeService = $youtubeService;
-    }
-
-    public function index() {
-
         return view('youtube.channel');
     }
 
-
-    public function analyze(Request $request) {
-
-
-        $validator = Validator::make($request->all(),[
-
+    public function analyze(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
             'channel_id' => 'required|string',
         ]);
 
-        if($validator->fails()) {
-
-            return response()->json([
-                'errors' => $validator->errors(),
-            ],422);
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'errors' => $validator->errors(),
+                ],
+                422,
+            );
         }
 
-
-        try{
-
+        try {
             //チャンネル情報
             $channelData = $this->youtubeService->getChannelInfo($request->input('channel_id'));
 
             //動画一覧
-            $videoes = $this->youtubeService->getTopVideoesByViews($channelData['id']);
+            $videos = $this->youtubeService->getTopVideosByViews($channelData['id']);
 
             $allVideos = $this->youtubeService->getVideosForDurationAnalysis($channelData['id'], 50);
 
@@ -56,20 +47,19 @@ class YoutubeController extends Controller
                 'status' => 'success',
                 'message' => '分析が完了しました。',
                 'data' => $channelData,
-                'videoes' => [
-                    'items' => $videoes,
+                'videos' => [
+                    'items' => $videos,
                 ],
                 'durationStats' => $durationStats,
             ]);
-
-        }catch(\Exception $e) {
-
-            return response()->json([
-
-                'status' => 'error',
-                'message' => $e->getMessage(),
-            ],500);
+        } catch (\Exception $e) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => $e->getMessage(),
+                ],
+                500,
+            );
         }
-
     }
 }

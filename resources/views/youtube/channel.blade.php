@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="container mt-4">
-        
+
         <form id="analyzeForm">
             @csrf
             <input type="text" name="channel_id" placeholder="@ハンドル名を入力">
@@ -15,9 +15,9 @@
     </div>
 
     <script>
-        $(document).ready(function(){
+        $(document).ready(function() {
 
-            $('#analyzeForm').submit(function(e){
+            $('#analyzeForm').submit(function(e) {
                 e.preventDefault();
 
                 const form = $(this);
@@ -27,19 +27,20 @@
                 result.html('<p>分析中...</p>');
 
                 $.ajax({
-                    url: "{{ route('youtube.analyze')}}",
+                    url: "{{ route('youtube.analyze') }}",
                     type: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token()}}'
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     data: formData,
-                    success: function(response){
+                    success: function(response) {
                         console.log(response);
 
-                        if(response.errors) {
+                        if (response.errors) {
 
-                            result.html(`<p style="color:red;">${response.errors.channel_id}</p>`);
-                        }else if(response.status === 'success') {
+                            result.html(
+                                `<p style="color:red;">${response.errors.channel_id}</p>`);
+                        } else if (response.status === 'success') {
 
                             if (!response.data) {
                                 result.html(`<p style="color:red;">チャンネルが見つかりませんでした。</p>`);
@@ -49,18 +50,20 @@
                             const info = response.data.snippet;
                             const stats = response.data.statistics;
 
-                            const items = response.videoes.items;
+                            const items = response.videos.items;
 
 
                             const labels = items.map((item, index) => `動画${index + 1}`);
-                            const videoTitles = items.map(function(item){
+                            const videoTitles = items.map(function(item) {
                                 return item.snippet.title;
                             });
-                            const views = items.map(item => Number(item.statistics?.viewCount  ?? 0));
-                            const likes = items.map(item => Number(item.statistics?.likeCount ?? 0));
+                            const views = items.map(item => Number(item.statistics?.viewCount ??
+                                0));
+                            const likes = items.map(item => Number(item.statistics?.likeCount ??
+                                0));
 
 
-                            let html =`
+                            let html = `
                              <h4>${info.title}</h4>
                              <p>${info.description}</p>
                              <p><strong>登録者数:</strong> ${formatNumberJapan(stats.subscriberCount)}</p>
@@ -102,18 +105,18 @@
                                         <th>リンク</th>
                                     </tr>`;
 
-                                    items.forEach((item, index) => {
+                            items.forEach((item, index) => {
 
-                                        const statistics = item.statistics || {};
+                                const statistics = item.statistics || {};
 
-                                        let videoView = statistics.viewCount ??  '不明';
-                                        const likeCount = statistics.likeCount ?? '不明'
-                                        const commentCount = statistics.commentCount ?? '不明'
-                                        const duration = item.contentDetails?.duration ?? null;
-                                        
+                                let videoView = statistics.viewCount ?? '不明';
+                                const likeCount = statistics.likeCount ?? '不明'
+                                const commentCount = statistics.commentCount ?? '不明'
+                                const duration = item.contentDetails?.duration ?? null;
 
-                                        html += 
-                                        `<tr>
+
+                                html +=
+                                    `<tr>
                                             <td>${index + 1}</td>
                                             <td>${truncateText(item.snippet.title)}</td>
                                             <td>${item.snippet.publishedAt}</td>
@@ -123,24 +126,25 @@
                                             <td>${formatDuration(duration)}</td>
                                             <td><a href="https://www.youtube.com/watch?v=${item.id}" target="_blank">見る</a></td>
                                         </tr>`
-                                    });
+                            });
 
-                            html +=`</table>`;
+                            html += `</table>`;
 
                             result.html(html);
 
 
                             //動画時間分布グラフ
 
-                            
+
                             const durationStats = response.durationStats || {};
 
 
                             const durationLabels = Object.keys(durationStats);
-                            
+
                             const durationCounts = Object.values(durationStats);
 
-                            const circleChart = document.querySelector('#circleChart').getContext('2d');
+                            const circleChart = document.querySelector('#circleChart')
+                                .getContext('2d');
 
                             new Chart(circleChart, {
                                 type: 'pie',
@@ -148,28 +152,35 @@
                                     labels: durationLabels,
                                     datasets: [{
                                         data: durationCounts,
-                                        backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF']
+                                        backgroundColor: ['#FF6384', '#36A2EB',
+                                            '#FFCE56', '#4BC0C0', '#9966FF'
+                                        ]
                                     }]
                                 },
                                 options: {
-                                    responsive:true,
+                                    responsive: true,
                                     plugins: {
                                         legend: {
                                             position: 'bottom',
                                         },
 
                                         tooltip: {
-                                        callbacks: {
-                                            label: function(context) {
-                                                const value = context.raw || 0;
-                                                const total = context.dataset.data.reduce((sum, v) => sum + v, 0);
-                                                const percent = total ? ((value / total) * 100).toFixed(1) : 0;
-                                                const label = context.label || '';
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const value = context.raw || 0;
+                                                    const total = context.dataset
+                                                        .data.reduce((sum, v) =>
+                                                            sum + v, 0);
+                                                    const percent = total ? ((
+                                                            value / total) *
+                                                        100).toFixed(1) : 0;
+                                                    const label = context.label ||
+                                                        '';
 
-                                                return `${label} : ${percent}% (${value}本)`;
+                                                    return `${label} : ${percent}% (${value}本)`;
+                                                }
                                             }
                                         }
-                                    }
                                     },
 
                                 }
@@ -178,30 +189,30 @@
                             //chart.jsグラフ
                             const ctx = document.querySelector('#myChart').getContext('2d');
                             new Chart(ctx, {
-                                type:'bar',
+                                type: 'bar',
                                 data: {
                                     labels: labels,
-                                    datasets: [
-                                        {
-                                            label:'再生数',
+                                    datasets: [{
+                                            label: '再生数',
                                             data: views,
                                             yAxisID: 'yViews',
                                         },
                                         {
-                                            label:'高評価数',
+                                            label: '高評価数',
                                             data: likes,
                                             yAxisID: 'yLikes',
                                         },
                                     ]
                                 },
-                                options:{
-                                    responsive:true,
+                                options: {
+                                    responsive: true,
                                     scales: {
-                                        yViews:{
+                                        yViews: {
                                             type: 'linear',
                                             position: 'left',
                                             ticks: {
-                                                callback: value => formatNumberJapan(value)
+                                                callback: value => formatNumberJapan(
+                                                    value)
                                             }
                                         },
                                         yLikes: {
@@ -211,25 +222,27 @@
                                                 drawOnChartArea: false
                                             },
                                             ticks: {
-                                                callback: value => formatNumberJapan(value)
+                                                callback: value => formatNumberJapan(
+                                                    value)
                                             }
                                         }
                                     },
-                                    plugins:{
-                                        legend:{
+                                    plugins: {
+                                        legend: {
                                             position: 'top',
                                         },
-                                        
-                                    tooltip:{
-                                        callbacks: {
-                                            title: function(tooltipItems){
 
-                                                const index = tooltipItems[0].dataIndex;
+                                        tooltip: {
+                                            callbacks: {
+                                                title: function(tooltipItems) {
 
-                                                return videoTitles[index];
+                                                    const index = tooltipItems[0]
+                                                        .dataIndex;
+
+                                                    return videoTitles[index];
+                                                }
                                             }
-                                        }
-                                    },
+                                        },
                                     },
 
 
@@ -237,7 +250,7 @@
                             })
 
 
-                        }else{
+                        } else {
                             result.html(`<p style="color:red;">${response.message}</p>`)
                         }
                     },
@@ -249,22 +262,22 @@
 
             })
 
-            function formatNumberJapan(num){
+            function formatNumberJapan(num) {
                 num = Number(num);
 
-                if(isNaN(num)) {
+                if (isNaN(num)) {
                     return '不明';
                 }
 
-                if(num >= 100000000) {
+                if (num >= 100000000) {
                     return (num / 100000000).toFixed(1).replace(/\.0$/, '') + '億';
                 }
 
-                if(num >= 10000) {
+                if (num >= 10000) {
                     return (num / 10000).toFixed(1).replace(/\.0$/, '') + '万';
                 }
 
-                if(num >= 1000) {
+                if (num >= 1000) {
                     return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
                 }
 
@@ -273,27 +286,27 @@
 
             function formatDuration(duration) {
 
-                if(!duration || typeof duration !== 'string') {
+                if (!duration || typeof duration !== 'string') {
                     return '不明';
                 }
 
                 const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
 
-                
-                if(!match) {
+
+                if (!match) {
                     return '不明';
                 }
 
 
-                const hours = match[1]? Number(match[1]) : 0;
-                const minutes = match[2]? Number(match[2]) : 0;
-                const seconds = match[3]? Number(match[3]) : 0;
+                const hours = match[1] ? Number(match[1]) : 0;
+                const minutes = match[2] ? Number(match[2]) : 0;
+                const seconds = match[3] ? Number(match[3]) : 0;
 
 
 
                 //動画時間が1時間以上の時
 
-                if(hours > 0) {
+                if (hours > 0) {
                     return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                 }
 
@@ -301,9 +314,9 @@
 
             }
 
-            function truncateText(text, maxLength = 30){
-                
-                if(!text) {
+            function truncateText(text, maxLength = 30) {
+
+                if (!text) {
                     return '';
                 }
 
@@ -311,5 +324,5 @@
             }
         });
     </script>
-                   
+
 @endsection
